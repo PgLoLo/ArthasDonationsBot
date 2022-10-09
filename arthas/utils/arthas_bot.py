@@ -1,14 +1,12 @@
 import logging
 import pathlib
 import time
-from collections import namedtuple
 
 import cv2
 import numpy as np
 from wrapt import synchronized
 
 from arthas.utils.donates_detector import extract_donate_robust
-from arthas.utils.file_storage import FileStorage
 from arthas.utils.stream_video import StreamVideoSnapshots
 from arthas.utils.telegram_chat_bot import TelegramChatBot
 from arthas.utils.youtube_api import YoutubeAPI
@@ -16,10 +14,6 @@ from arthas.utils.youtube_stream_monitor import YoutubeStreamerMonitor
 
 
 logger = logging.getLogger("Arthas bot")
-
-
-ClipInfo = namedtuple('ClipInfo',
-                      'clip_url clip_id video_id offset duration username message telegram_message_id')
 
 
 class ArthasBot:
@@ -40,23 +34,6 @@ class ArthasBot:
 
         self.waiting_for_screenshot = False
 
-        self.clips_ids_by_video_id: FileStorage[dict[str, str]] = FileStorage("clips.json", dirpath="state/clips")
-        self.clips = {}
-
-        self.clips_ids_by_video_id.load()
-        if self.clips_ids_by_video_id.value is None:
-            self.clips_ids_by_video_id.value = {}
-        else:
-            logger.info("Loading clips...")
-            deleted_number = 0
-            for video_id, clips_ids in self.clips_ids_by_video_id.value.items():
-                for clip_id in clips_ids:
-                    self.clips[clip_id] = self.create_clip_storage(video_id, clip_id)
-                    self.clips[clip_id].load(ClipInfo)
-                    if self.clips[clip_id].value is None:
-                        deleted_number += 1
-            logger.info("{} clips loaded! ({} deleted)".format(len(self.clips), deleted_number))
-
         self.stream_monitor.add_new_post_callback(self.on_new_post)
         self.stream_monitor.add_channel_status_callback(self.on_channel_status_changed)
         self.stream_monitor.add_start_callback(self.on_stream_started)
@@ -67,10 +44,6 @@ class ArthasBot:
     def run(self) -> None:
         logger.info("Starting telegram bot...")
         self.telegram_bot.start()
-
-        if self.stream_monitor.streamer_state.value is not None:
-            assert False
-            # self.start_donates_detection()
 
         logger.info("Starting stream monitor...")
         monitor_thread = self.stream_monitor.start()
@@ -195,6 +168,3 @@ class ArthasBot:
         cv2.imwrite(donate_path, donate_img)
         with open(donate_path, 'rb') as photo_file:
             self.telegram_bot.send_photo(photo_file)
-
-    def create_clip_storage(self, video_id: str, clip_id: str) -> FileStorage[ClipInfo]:
-        return FileStorage("clip_{}.json".format(clip_id), dirpath="state/clips/{}".format(video_id))

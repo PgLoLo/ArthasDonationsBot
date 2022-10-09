@@ -10,7 +10,7 @@ logger = logging.getLogger("File storage")
 T = TypeVar('T')
 
 
-class FileStorage(Generic[T]):
+class _FileStorage(Generic[T]):
     def __init__(self, filename: str, *, dirpath: str = "."):
         self.value: Optional[T] = None
         self.dirpath = dirpath
