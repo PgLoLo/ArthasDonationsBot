@@ -97,9 +97,9 @@ class YoutubeStreamerMonitor:
                 return
 
     def run_loop(self) -> None:
-        user = self.api.get_user(self.username)
-
-        self.streamer_state = StreamerState(user.id, user.video_playlist_id, '', None)
+        if self.streamer_state is None:
+            user = self.api.get_user(self.username)
+            self.streamer_state = StreamerState(user.id, user.video_playlist_id, '', None)
 
         while not self.stopped:
             try:

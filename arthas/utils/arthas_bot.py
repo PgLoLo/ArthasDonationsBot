@@ -30,16 +30,19 @@ class ArthasBot:
 
         self.api = YoutubeAPI(google_api_key)
         self.video_tracker = StreamVideoSnapshots()
-        self.stream_monitor = YoutubeStreamerMonitor(channel_name, self.api)
+        self.stream_monitor = self.init_streamer_monitor(YoutubeStreamerMonitor(channel_name, self.api))
 
         self.waiting_for_screenshot = False
 
-        self.stream_monitor.add_new_post_callback(self.on_new_post)
-        self.stream_monitor.add_channel_status_callback(self.on_channel_status_changed)
-        self.stream_monitor.add_start_callback(self.on_stream_started)
-        self.stream_monitor.add_game_changed_callback(self.on_game_changed)
-        self.stream_monitor.add_title_changed_callback(self.on_title_changed)
-        self.stream_monitor.add_stop_callback(self.on_stream_stopped)
+    def init_streamer_monitor(self, monitor: YoutubeStreamerMonitor) -> YoutubeStreamerMonitor:
+        monitor.add_new_post_callback(self.on_new_post)
+        monitor.add_channel_status_callback(self.on_channel_status_changed)
+        monitor.add_start_callback(self.on_stream_started)
+        monitor.add_game_changed_callback(self.on_game_changed)
+        monitor.add_title_changed_callback(self.on_title_changed)
+        monitor.add_stop_callback(self.on_stream_stopped)
+
+        return monitor
 
     def run(self) -> None:
         logger.info("Starting telegram bot...")
